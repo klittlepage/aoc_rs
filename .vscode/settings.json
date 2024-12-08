@@ -1,0 +1,7 @@
+{
+  "rust-analyzer.server.extraEnv": {
+    "RUSTUP_TOOLCHAIN": "1.83.0",
+    "CARGO_TARGET_DIR": "target/rust-analyzer"
+  },
+  "rust-analyzer.rustfmt.extraArgs": ["+nightly-2024-03-28"]
+}

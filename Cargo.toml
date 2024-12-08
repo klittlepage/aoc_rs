@@ -1,0 +1,38 @@
+[workspace]
+resolver = "2"
+
+members = ["lib/cli", "lib/util", "tools/aoc_downloader", "years/aoc_2024"]
+
+[workspace.package]
+authors = ["Kelly Littlepage <kelly@onechronos.com>"]
+description = "Advent Of Code (AOC) tooling and solutions"
+documentation = "https://github.com/klittlepage/aoc_rs"
+edition = "2021"
+homepage = "https://github.com/klittlepage/aoc_rs"
+license = "MIT"
+publish = false
+readme = "README.md"
+repository = "https://github.com/klittlepage/aoc_rs"
+rust-version = "1.83.0"
+version = "0.0.1"
+
+[workspace.dependencies]
+aoc_downloader = { path = "tools/aoc_downloader" }
+cli = { path = "lib/cli" }
+util = { path = "lib/util" }
+aoc_2024 = { path = "years/aoc_2024" }
+thiserror = "2.0.5"
+anyhow = "1.0.94"
+serde = { version = "1.0.215", features = ["derive"] }
+serde_json = "1.0.133"
+clap = { version = "4.5.23", features = ["derive", "string"] }
+derive_more = "1.0.0"
+regex = "1.11.1"
+itertools = "0.13.0"
+num-traits = "0.2.19"
+chrono = "0.4.38"
+logos = "0.15.0"
+pest = "2.7.15"
+reqwest = { version = "0.12.9", features = ["blocking"] }
+rug = { version = "1.26.1", features = ["serde"] }
+dotenv = "0.15.0"
