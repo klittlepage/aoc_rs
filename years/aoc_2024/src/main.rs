@@ -2,6 +2,7 @@
 #![allow(clippy::missing_errors_doc, clippy::module_name_repetitions)]
 
 mod d1;
+mod d2;
 
 use std::path::{Path, PathBuf};
 
@@ -17,6 +18,7 @@ pub(crate) fn example_dir_for_day(base_dir: &Path, day: u16) -> PathBuf {
 fn dispatch(data_dir: &Path, day: u16, problem_part: Part, example: bool) -> Result<String> {
     match day {
         1 => d1::run(data_dir, problem_part, example),
+        2 => d2::run(data_dir, problem_part, example),
         other => Err(anyhow!("invalid day {}", other)),
     }
 }

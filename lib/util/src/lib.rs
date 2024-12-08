@@ -2,4 +2,5 @@
 #![allow(clippy::missing_errors_doc, clippy::module_name_repetitions)]
 
 pub mod counting;
+pub mod data;
 pub mod io;
