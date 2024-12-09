@@ -1,0 +1,5 @@
+digits = @{ ASCII_DIGIT+ }
+mul_expr = { "mul(" ~ digits ~ "," ~ digits ~ ")" }
+eval_dont = { "don't()" }
+eval_do = { "do()" }
+root = { SOI ~ (mul_expr | eval_dont | eval_do | ANY)* ~ EOI }

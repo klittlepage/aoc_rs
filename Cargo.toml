@@ -33,6 +33,7 @@ num-traits = "0.2.19"
 chrono = "0.4.38"
 logos = "0.15.0"
 pest = "2.7.15"
+pest_derive = "2.7.15"
 reqwest = { version = "0.12.9", features = ["blocking"] }
 rug = { version = "1.26.1", features = ["serde"] }
 dotenv = "0.15.0"
