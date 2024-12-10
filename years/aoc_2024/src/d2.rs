@@ -3,16 +3,13 @@ use std::path::Path;
 use anyhow::Result;
 
 use cli::{part::Part, util::file_path};
-use util::data::{
-    all_negative_i64, all_positive_i64, nth_difference_i64,
-    table::{read_i64_table, Table},
-};
+use util::data::{all_negative_i64, all_positive_i64, nth_difference_i64, table::Table};
 
 use crate::example_dir_for_day;
 
 pub(crate) fn run(base_dir: &Path, part: Part, example: bool) -> Result<String> {
     let path = file_path(&example_dir_for_day(base_dir, 2), part, example);
-    let table = read_i64_table(&path)?;
+    let table = Table::<i64>::read_from_path(&path)?;
     let solution = match part {
         Part::P1 => solve_p1(&table),
         Part::P2 => solve_p2(&table),
@@ -69,14 +66,14 @@ mod tests {
     #[test]
     fn test_example_1() {
         let path = file_path(&example_dir_for_day(&default_data_dir(), 2), Part::P1, true);
-        let table = read_i64_table(&path).expect("valid table");
+        let table = Table::<i64>::read_from_path(&path).expect("valid table");
         assert_eq!(2, solve_p1(&table));
     }
 
     #[test]
     fn test_example_2() {
         let path = file_path(&example_dir_for_day(&default_data_dir(), 2), Part::P2, true);
-        let table = read_i64_table(&path).expect("valid table");
+        let table = Table::<i64>::read_from_path(&path).expect("valid table");
         assert_eq!(4, solve_p2(&table));
     }
 
@@ -87,7 +84,7 @@ mod tests {
             Part::P1,
             false,
         );
-        let table = read_i64_table(&path).expect("valid table");
+        let table = Table::<i64>::read_from_path(&path).expect("valid table");
         assert_eq!(326, solve_p1(&table));
     }
 
@@ -98,7 +95,7 @@ mod tests {
             Part::P2,
             false,
         );
-        let table = read_i64_table(&path).expect("valid table");
+        let table = Table::<i64>::read_from_path(&path).expect("valid table");
         assert_eq!(381, solve_p2(&table));
     }
 }

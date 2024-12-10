@@ -36,12 +36,12 @@ struct Args {
     /// AOC session cookie
     #[arg(short, long)]
     aoc_session: Option<String>,
+    /// Problem part
+    #[arg(short, long, default_value_t = Part::P1)]
+    problem_part: Part,
     /// Problem day
     #[arg(value_parser=clap::value_parser!(u16).range(1..=25))]
     day: u16,
-    /// Problem part
-    #[arg()]
-    problem_part: Part,
 }
 
 fn session_cookie(args: &Args) -> Option<String> {

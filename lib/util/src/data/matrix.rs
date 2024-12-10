@@ -1,52 +1,39 @@
 use std::{fmt, path::Path};
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{anyhow, Context, Result};
 
-use crate::io::read_with_callback;
+use super::{array_2d_core::Array2dCore, TwoDimensionalArray};
 
 #[derive(Debug, Clone)]
 pub struct Matrix<T: Clone> {
-    values: Vec<Vec<T>>,
-    n_rows: usize,
+    inner: Array2dCore<T>,
     n_cols: usize,
 }
 
+impl Matrix<char> {
+    pub fn read_from_path(path: &Path) -> Result<Self> {
+        let inner = Array2dCore::<char>::read_chars(path)?;
+        let n_cols = inner
+            .n_cols_if_uniform()
+            .ok_or(anyhow!("rows are not of uniform length"))?;
+        Ok(Self { inner, n_cols })
+    }
+}
+
+crate::data::array_2d_core::typed_readers!(Matrix);
+crate::data::array_2d_core::show_wrapper!(Matrix);
+
 impl<T: Clone> Matrix<T> {
-    pub fn read_from_path<F: FnMut(&str) -> Result<T>>(
+    pub fn read_generic_from_path<F: FnMut(&str) -> Result<T>>(
         path: &Path,
         sep: &str,
-        mut map: F,
+        map: F,
     ) -> Result<Self> {
-        let mut n_cols: Option<usize> = None;
-        let mut values: Vec<Vec<T>> = vec![];
-
-        read_with_callback(path, &mut |line| {
-            let row: Result<Vec<T>> = line.split(sep).map(&mut map).collect();
-            let row = row.context(format!("invalid row {line}"))?;
-            if let Some(n_cols) = n_cols {
-                if n_cols != row.len() {
-                    bail!("rows are not of uniform length");
-                }
-            } else {
-                n_cols = Some(row.len());
-            }
-            values.push(row);
-            Ok(())
-        })?;
-
-        let n_rows = values.len();
-        let n_cols = n_cols.ok_or(anyhow!("no cols"))?;
-
-        Ok(Self {
-            values,
-            n_rows,
-            n_cols,
-        })
-    }
-
-    #[must_use]
-    pub fn n_rows(&self) -> usize {
-        self.n_rows
+        let inner = Array2dCore::read_generic_from_path(path, sep, map)?;
+        let n_cols = inner
+            .n_cols_if_uniform()
+            .ok_or(anyhow!("rows are not of uniform length"))?;
+        Ok(Self { inner, n_cols })
     }
 
     #[must_use]
@@ -54,73 +41,41 @@ impl<T: Clone> Matrix<T> {
         self.n_cols
     }
 
-    pub fn row(&self, index: usize) -> Option<&[T]> {
-        self.values.get(index).map(Vec::as_slice)
-    }
-
-    pub fn row_mut(&mut self, index: usize) -> Option<&mut [T]> {
-        self.values.get_mut(index).map(Vec::as_mut_slice)
-    }
-
-    #[must_use]
-    pub fn col(&self, index: usize) -> Option<Vec<&T>> {
-        let mut col: Vec<&T> = Vec::with_capacity(self.n_rows);
-        for row in &self.values {
-            let col_value = row.get(index)?;
-            col.push(col_value);
-        }
-        Some(col)
-    }
-
-    #[must_use]
-    pub fn get(&self, row: usize, col: usize) -> Option<&T> {
-        let row = self.values.get(row)?;
-        row.get(col)
-    }
-
-    pub fn get_mut(&mut self, row: usize, col: usize) -> Option<&mut T> {
-        let row = self.values.get_mut(row)?;
-        row.get_mut(col)
-    }
-
     pub fn iter(&self) -> impl Iterator<Item = &Vec<T>> {
-        self.values.iter()
+        self.inner.iter()
     }
 }
 
-impl<T: Clone + fmt::Display> fmt::Display for Matrix<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut largest_element = 0usize;
-
-        for row in &self.values {
-            for value in row {
-                let elem_length = value.to_string().len();
-                largest_element = std::cmp::max(largest_element, elem_length);
-            }
-        }
-
-        for (row_idx, row) in self.values.iter().enumerate() {
-            for (col_idx, value) in row.iter().enumerate() {
-                let elem = value.to_string();
-                write!(f, "{elem:^largest_element$}")?;
-                if col_idx != self.n_cols - 1 {
-                    write!(f, " ")?;
-                }
-            }
-            if row_idx != self.n_rows - 1 {
-                writeln!(f)?;
-            }
-        }
-        Ok(())
+impl<T> TwoDimensionalArray<T> for Matrix<T>
+where
+    T: Clone,
+{
+    fn new(values: Vec<Vec<T>>) -> Result<Self> {
+        let inner = Array2dCore::new(values)?;
+        let n_cols = inner
+            .n_cols_if_uniform()
+            .ok_or(anyhow!("rows are not of uniform length"))?;
+        Ok(Self { inner, n_cols })
     }
+
+    crate::data::array_2d_core::wrapper_methods!();
 }
 
-pub fn read_i64_matrix(path: &Path) -> Result<Matrix<i64>> {
-    Matrix::read_from_path(path, " ", |x| x.parse::<i64>().context("invalid i64"))
-        .context("failed to parse input file")
-}
+#[allow(clippy::unwrap_used)]
+#[cfg(test)]
+mod tests {
+    use crate::data::test_support::iter_direction;
 
-pub fn read_u64_matrix(path: &Path) -> Result<Matrix<u64>> {
-    Matrix::read_from_path(path, " ", |x| x.parse::<u64>().context("invalid usize"))
-        .context("failed to parse input file")
+    use super::*;
+
+    #[test]
+    fn test_iter_direction() {
+        let row_1 = vec![1, 2, 3];
+        let row_2 = vec![4, 5, 6];
+        let row_3 = vec![7, 8, 9];
+        let values = vec![row_1, row_2, row_3];
+
+        let mat = Matrix::new(values).unwrap();
+        iter_direction(&mat);
+    }
 }

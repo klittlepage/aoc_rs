@@ -2,107 +2,67 @@ use std::{fmt, path::Path};
 
 use anyhow::{Context, Result};
 
-use crate::io::read_with_callback;
+use super::{array_2d_core::Array2dCore, TwoDimensionalArray};
 
 #[derive(Debug, Clone)]
 pub struct Table<T: Clone> {
-    values: Vec<Vec<T>>,
-    n_rows: usize,
+    inner: Array2dCore<T>,
 }
 
 impl<T: Clone> Table<T> {
-    pub fn read_from_path<F: FnMut(&str) -> Result<T>>(
+    pub(crate) fn read_generic_from_path<F: FnMut(&str) -> Result<T>>(
         path: &Path,
         sep: &str,
-        mut map: F,
+        map: F,
     ) -> Result<Self> {
-        let mut values: Vec<Vec<T>> = vec![];
-
-        read_with_callback(path, &mut |line| {
-            let row: Result<Vec<T>> = line.split(sep).map(&mut map).collect();
-            let row = row.context(format!("invalid row {line}"))?;
-            values.push(row);
-            Ok(())
-        })?;
-
-        let n_rows = values.len();
-
-        Ok(Self { values, n_rows })
-    }
-
-    #[must_use]
-    pub fn n_rows(&self) -> usize {
-        self.n_rows
-    }
-
-    pub fn row(&self, index: usize) -> Option<&[T]> {
-        self.values.get(index).map(Vec::as_slice)
-    }
-
-    pub fn row_mut(&mut self, index: usize) -> Option<&mut [T]> {
-        self.values.get_mut(index).map(Vec::as_mut_slice)
-    }
-
-    #[must_use]
-    pub fn col(&self, index: usize) -> Option<Vec<&T>> {
-        let mut col: Vec<&T> = Vec::with_capacity(self.n_rows);
-        for row in &self.values {
-            let col_value = row.get(index)?;
-            col.push(col_value);
-        }
-        Some(col)
-    }
-
-    #[must_use]
-    pub fn get(&self, row: usize, col: usize) -> Option<&T> {
-        let row = self.values.get(row)?;
-        row.get(col)
-    }
-
-    pub fn get_mut(&mut self, row: usize, col: usize) -> Option<&mut T> {
-        let row = self.values.get_mut(row)?;
-        row.get_mut(col)
+        Ok(Self {
+            inner: Array2dCore::read_generic_from_path(path, sep, map)?,
+        })
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Vec<T>> {
-        self.values.iter()
+        self.inner.iter()
     }
 }
 
-impl<T: Clone + fmt::Display> fmt::Display for Table<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut largest_element = 0usize;
-
-        for row in &self.values {
-            for value in row {
-                let elem_length = value.to_string().len();
-                largest_element = std::cmp::max(largest_element, elem_length);
-            }
-        }
-
-        for (row_idx, row) in self.values.iter().enumerate() {
-            let n_cols = row.len();
-            for (col_idx, value) in row.iter().enumerate() {
-                let elem = value.to_string();
-                write!(f, "{elem:^largest_element$}")?;
-                if col_idx != n_cols - 1 {
-                    write!(f, " ")?;
-                }
-            }
-            if row_idx != self.n_rows - 1 {
-                writeln!(f)?;
-            }
-        }
-        Ok(())
+impl Table<char> {
+    pub fn read_from_path(path: &Path) -> Result<Self> {
+        Ok(Self {
+            inner: Array2dCore::<char>::read_chars(path)?,
+        })
     }
 }
 
-pub fn read_i64_table(path: &Path) -> Result<Table<i64>> {
-    Table::read_from_path(path, " ", |x| x.parse::<i64>().context("invalid i64"))
-        .context("failed to parse input file")
+crate::data::array_2d_core::typed_readers!(Table);
+crate::data::array_2d_core::show_wrapper!(Table);
+
+impl<T> TwoDimensionalArray<T> for Table<T>
+where
+    T: Clone,
+{
+    fn new(values: Vec<Vec<T>>) -> Result<Self> {
+        let inner = Array2dCore::new(values)?;
+        Ok(Self { inner })
+    }
+
+    crate::data::array_2d_core::wrapper_methods!();
 }
 
-pub fn read_u64_table(path: &Path) -> Result<Table<u64>> {
-    Table::read_from_path(path, " ", |x| x.parse::<u64>().context("invalid u64"))
-        .context("failed to parse input file")
+#[allow(clippy::unwrap_used)]
+#[cfg(test)]
+mod tests {
+    use crate::data::test_support::iter_direction;
+
+    use super::*;
+
+    #[test]
+    fn test_iter_direction() {
+        let row_1 = vec![1, 2, 3];
+        let row_2 = vec![4, 5, 6];
+        let row_3 = vec![7, 8, 9];
+        let values = vec![row_1, row_2, row_3];
+
+        let mat = Table::new(values).unwrap();
+        iter_direction(&mat);
+    }
 }

@@ -17,6 +17,16 @@ enum Token {
     Dont,
 }
 
+pub(crate) fn run(base_dir: &Path, part: Part, example: bool) -> Result<String> {
+    let path = file_path(&example_dir_for_day(base_dir, 3), part, example);
+    let tokens = parse_file(&path)?;
+    let solution = match part {
+        Part::P1 => solve_p1(&tokens),
+        Part::P2 => solve_p2(&tokens),
+    };
+    Ok(solution.to_string())
+}
+
 fn eval(tokens: &[Token], ignore_control_flow: bool) -> i64 {
     let mut enabled = true;
     let mut total = 0;
@@ -70,16 +80,6 @@ fn parse_input(input: &str) -> Result<Vec<Token>> {
 fn parse_file(path: &Path) -> Result<Vec<Token>> {
     let input: String = fs::read_to_string(path)?;
     parse_input(&input)
-}
-
-pub(crate) fn run(base_dir: &Path, part: Part, example: bool) -> Result<String> {
-    let path = file_path(&example_dir_for_day(base_dir, 3), part, example);
-    let tokens = parse_file(&path)?;
-    let solution = match part {
-        Part::P1 => solve_p1(&tokens),
-        Part::P2 => solve_p2(&tokens),
-    };
-    Ok(solution.to_string())
 }
 
 fn solve_p1(tokens: &[Token]) -> i64 {

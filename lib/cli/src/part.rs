@@ -3,6 +3,7 @@ use std::fmt::Display;
 use clap::ValueEnum;
 
 #[derive(ValueEnum, Copy, Clone, Debug, Default)]
+#[clap(rename_all = "PascalCase")]
 pub enum Part {
     #[default]
     P1,
