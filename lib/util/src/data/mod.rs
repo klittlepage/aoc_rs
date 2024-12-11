@@ -3,6 +3,8 @@ pub mod table;
 
 mod array_2d_core;
 
+use std::fmt::Display;
+
 use strum::{EnumIter, IntoEnumIterator};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -12,18 +14,40 @@ pub enum IterationInstruction {
     Abort,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct Coordinate2d(usize, usize);
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct Coordinate2d(pub usize, pub usize);
 
 impl Coordinate2d {
     #[must_use]
     pub fn new(x: usize, y: usize) -> Self {
         Self(x, y)
     }
+
+    #[must_use]
+    pub fn step(&self, direction: Direction2d) -> Option<Coordinate2d> {
+        let Step2d(delta_x, delta_y) = direction.step();
+        let extended_x = i128::try_from(self.0).ok()? + i128::try_from(delta_x).ok()?;
+        let extended_y = i128::try_from(self.1).ok()? + i128::try_from(delta_y).ok()?;
+        let x = usize::try_from(extended_x).ok()?;
+        let y = usize::try_from(extended_y).ok()?;
+        Some(Coordinate2d::new(x, y))
+    }
+}
+
+impl Display for Coordinate2d {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {})", self.0, self.1)
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct Step2d(isize, isize);
+pub struct Step2d(pub isize, pub isize);
+
+impl Display for Step2d {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {})", self.0, self.1)
+    }
+}
 
 impl Step2d {
     #[must_use]
@@ -32,7 +56,7 @@ impl Step2d {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter, PartialOrd, Ord)]
 pub enum Direction2d {
     North,
     NorthEast,
@@ -57,6 +81,22 @@ impl Direction2d {
             Self::West => Step2d::new(-1, 0),
             Self::NorthWest => Step2d::new(-1, -1),
         }
+    }
+}
+
+impl Display for Direction2d {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let lit = match self {
+            Self::North => "N",
+            Self::NorthEast => "NE",
+            Self::East => "E",
+            Self::SouthEast => "SE",
+            Self::South => "S",
+            Self::SouthWest => "SW",
+            Self::West => "W",
+            Self::NorthWest => "NW",
+        };
+        write!(f, "{lit}")
     }
 }
 
@@ -248,5 +288,43 @@ pub(crate) mod test_support {
             iter_idx += 1;
             IterationInstruction::Continue
         });
+    }
+
+    #[test]
+    fn test_coordinate_step() {
+        let zero = Coordinate2d::new(0, 0);
+        assert_eq!(zero.step(Direction2d::North), None);
+        assert_eq!(zero.step(Direction2d::NorthEast), None);
+        assert_eq!(zero.step(Direction2d::East), Some(Coordinate2d::new(1, 0)));
+        assert_eq!(
+            zero.step(Direction2d::SouthEast),
+            Some(Coordinate2d::new(1, 1))
+        );
+        assert_eq!(zero.step(Direction2d::South), Some(Coordinate2d::new(0, 1)));
+        assert_eq!(zero.step(Direction2d::SouthWest), None);
+        assert_eq!(zero.step(Direction2d::West), None);
+        assert_eq!(zero.step(Direction2d::NorthWest), None);
+
+        let one = Coordinate2d::new(1, 1);
+        assert_eq!(one.step(Direction2d::North), Some(Coordinate2d::new(1, 0)));
+        assert_eq!(
+            one.step(Direction2d::NorthEast),
+            Some(Coordinate2d::new(2, 0))
+        );
+        assert_eq!(one.step(Direction2d::East), Some(Coordinate2d::new(2, 1)));
+        assert_eq!(
+            one.step(Direction2d::SouthEast),
+            Some(Coordinate2d::new(2, 2))
+        );
+        assert_eq!(one.step(Direction2d::South), Some(Coordinate2d::new(1, 2)));
+        assert_eq!(
+            one.step(Direction2d::SouthWest),
+            Some(Coordinate2d::new(0, 2))
+        );
+        assert_eq!(one.step(Direction2d::West), Some(Coordinate2d::new(0, 1)));
+        assert_eq!(
+            one.step(Direction2d::NorthWest),
+            Some(Coordinate2d::new(0, 0))
+        );
     }
 }

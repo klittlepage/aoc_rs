@@ -4,6 +4,7 @@
 mod d1;
 mod d2;
 mod d3;
+mod d4;
 
 use std::path::{Path, PathBuf};
 
@@ -21,6 +22,7 @@ fn dispatch(data_dir: &Path, day: u16, problem_part: Part, example: bool) -> Res
         1 => d1::run(data_dir, problem_part, example),
         2 => d2::run(data_dir, problem_part, example),
         3 => d3::run(data_dir, problem_part, example),
+        4 => d4::run(data_dir, problem_part, example),
         other => Err(anyhow!("invalid day {}", other)),
     }
 }
